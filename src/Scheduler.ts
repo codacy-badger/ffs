@@ -1,13 +1,17 @@
 // The scheduler decides what needs to happen and then creates tasks for it.
+import Constants from './Constants';
+import TaskQueue from './TaskQueue';
+
 export default class Scheduler {
     static getRooms(): {[p: string] : Room} {
         return Game.rooms;
     }
 
     static createSchedule() {
-        let rooms = _.keys(this.getRooms());
+        let rooms = _.values(this.getRooms());
 
         _.forEach(rooms, (room: Room) => {
+            this.determineWorkload(room);
             this.delegateCreeps(room);
         });
     }
@@ -17,19 +21,25 @@ export default class Scheduler {
             .map(Scheduler.getUnusedSourcePoints)
             .reduce((acc, val) => acc + val, 0);
 
-        const workersInRoom = Scheduler.getCreepsInRoom(room)
+        const CIR = Scheduler.getCreepsInRoom(room);
+        const workersInRoom = CIR
             .filter(c => (<any>c.memory).task === 'worker').length;
 
         if (unworkedSourcePoints > workersInRoom) {
-            this.requisitonCreeps();
+            this.requisitionCreep('worker', room);
         }
 
+        const constructionPoints = Scheduler.getConstructionPoints(room).length;
+        const buildersInRoom = CIR
+            .filter(c => (<any>c.memory).task === 'builder').length;
+
+        if (constructionPoints / Constants.CONSTRUCTION_POINTS_PER_BUILDER > buildersInRoom) {
+            this.requisitionCreep('builder', room);
+        }
     }
 
     static getConstructionPoints(room: Room) {
-        const sites = room.find(FIND_MY_CONSTRUCTION_SITES);
-
-
+        return room.find(FIND_MY_CONSTRUCTION_SITES);
     }
 
     static getUnusedSourcePoints(source: Source) {
@@ -53,7 +63,7 @@ export default class Scheduler {
     }
 
     static getCreepsInRoom(room: Room): Creep[] {
-        return <Creep[]>_.values(Game.creeps).filter((c : Creep) => c.room.name === room.name);
+        return (<Creep[]>_.values(Game.creeps)).filter((c) => c.room.name === room.name);
     }
 
     static taskMap = {
@@ -72,10 +82,20 @@ export default class Scheduler {
         }, {});
         delete counts.tough;
         let keysSorted = Object.keys(counts).sort(function(a,b){return counts[a]-counts[b]});
-        return (<any>Scheduler.taskMap)[keysSorted[0]];
+        return (<any>this.taskMap)[keysSorted[0]];
     }
 
-    static requisitonCreeps() {
-
+    static partMap = {
+        'hauler': [MOVE, CARRY, CARRY],
+        'builder': [MOVE, MOVE, CARRY],
+        'worker': [MOVE, WORK, WORK]
+    };
+    static requisitionCreep(type: string, room: Room) {
+        const parts = (<any>this.partMap)[type];
+        const spawner = room.find(FIND_MY_SPAWNS)
+            .filter((s) => s.spawnCreep(parts, '', {dryRun: true}) && !s.spawning)[0];
+        if (spawner) {
+            spawner.spawnCreep(parts, type+new Date().toISOString(), {memory: {task: type}});
+        }
     }
 }

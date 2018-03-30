@@ -1,5 +1,10 @@
 import Task from './tasks/Task';
 
+/**
+ * The task queue is a simple buffer for running tasks.
+ * The kernel operates on values in the queue based on remaining CPU availability
+ * and the Scheduler populates the queue based off the state of the game.
+ */
 export default class TaskQueue {
     private static queue: Task[] = [];
 
@@ -8,15 +13,19 @@ export default class TaskQueue {
      * @param {Task} task
      */
     public static add(task: Task) {
-
+        this.queue.push(task);
     }
 
     /**
      * Get and remove the next task from the queue.
      * Might be useful for deferring execution of high CPU tasks.
      */
-    public static pop() {
+    public static pop(): Task | undefined {
+        return this.queue.shift();
+    }
 
+    public static peek(): Task | null {
+        return this.queue[0];
     }
 
     /**

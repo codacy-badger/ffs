@@ -40,8 +40,11 @@ export default class Mine extends Task {
         const dropoff = this.creep.room.find(FIND_STRUCTURES).filter(s => 
         (   s.structureType === STRUCTURE_CONTAINER
         ||  s.structureType === STRUCTURE_SPAWN
-        ||  s.structureType === STRUCTURE_EXTENSION
-        && s.energy < s.energyCapacity));
+        ||  s.structureType === STRUCTURE_EXTENSION)
+        // TODO: fix me. This wont work right for containers
+        && (<any>s).energy < (<any>s).energyCapacity);
+
+        StructureContainer
 
         dropoff.concat(this.creep.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTROLLER));
         if (dropoff.length > 0) {

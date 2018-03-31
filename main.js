@@ -140,6 +140,10 @@ var Mine = /** @class */ (function (_super) {
         }
     };
     Mine.prototype.collectEnergy = function () {
+        //TODO: Determine which source to hit.
+        // Can leverage Memory.source.$sourceID to see how many it can handle
+        // will need to associate the creep with that source in memory as well
+        // then find the applicable source from memory and direct to it
         var target = this.targets[0];
         if (target && this.creep.harvest(target) == ERR_NOT_IN_RANGE) {
             this.creep.moveTo(target, { visualizePathStyle: { stroke: '#ffff33' } });
@@ -149,8 +153,9 @@ var Mine = /** @class */ (function (_super) {
         var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) {
             return (s.structureType === STRUCTURE_CONTAINER
                 || s.structureType === STRUCTURE_SPAWN
-                || s.structureType === STRUCTURE_EXTENSION
-                    && s.energy < s.energyCapacity);
+                || s.structureType === STRUCTURE_EXTENSION)
+                // TODO: fix me. This wont work right for containers
+                && s.energy < s.energyCapacity;
         });
         dropoff.concat(this.creep.room.find(FIND_STRUCTURES).filter(function (s) { return s.structureType === STRUCTURE_CONTROLLER; }));
         if (dropoff.length > 0) {
@@ -191,11 +196,10 @@ var Build = /** @class */ (function (_super) {
         }
     };
     Build.prototype.collectEnergy = function () {
+        var _this = this;
         var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) {
-            return (s.structureType === STRUCTURE_SPAWN
-                || s.structureType === STRUCTURE_EXTENSION)
-                && s.energy > (s.energyCapacity / 3)
-                && s.energy > 215;
+            return s.structureType === STRUCTURE_CONTAINER
+                && s.store.energy > _this.creep.carryCapacity;
         });
         if (dropoff.length > 0) {
             if (this.creep.withdraw(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

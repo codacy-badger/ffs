@@ -151,16 +151,21 @@ var Mine = /** @class */ (function (_super) {
     };
     Mine.prototype.dropOffEnergy = function () {
         var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) {
-            return (s.structureType === STRUCTURE_CONTAINER
-                || s.structureType === STRUCTURE_SPAWN
-                || s.structureType === STRUCTURE_EXTENSION)
-                // TODO: fix me. This wont work right for containers
-                && s.energy < s.energyCapacity;
+            return s.structureType === STRUCTURE_CONTAINER
+                || (s.structureType === STRUCTURE_SPAWN && s.energy < s.energyCapacity)
+                || (s.structureType === STRUCTURE_EXTENSION && s.energy < s.energyCapacity);
         });
-        dropoff.concat(this.creep.room.find(FIND_STRUCTURES).filter(function (s) { return s.structureType === STRUCTURE_CONTROLLER; }));
         if (dropoff.length > 0) {
             if (this.creep.transfer(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                 this.creep.moveTo(dropoff[0], { visualizePathStyle: { stroke: '#ffffff' } });
+            }
+        }
+        else {
+            var controller = this.creep.room.find(FIND_STRUCTURES).filter(function (s) { return s.structureType === STRUCTURE_CONTROLLER; });
+            if (controller[0]) {
+                if (this.creep.upgradeController(controller[0]) == ERR_NOT_IN_RANGE) {
+                    this.creep.moveTo(controller[0], { visualizePathStyle: { stroke: '#ffffff' } });
+                }
             }
         }
     };
@@ -222,6 +227,12 @@ var Build = /** @class */ (function (_super) {
         }
     };
     Build.prototype.upgradeController = function () {
+        var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) { return s.structureType === STRUCTURE_CONTROLLER; });
+        if (dropoff.length > 0) {
+            if (this.creep.transfer(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                this.creep.moveTo(dropoff[0], { visualizePathStyle: { stroke: '#ffffff' } });
+            }
+        }
     };
     Build.prototype.goToConstructionSite = function () {
         var targets = this.targets.filter(function (s) { return s.progress < s.progressTotal; });

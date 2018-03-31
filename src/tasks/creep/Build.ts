@@ -56,7 +56,12 @@ export default class Build extends Task {
     }
 
     upgradeController(): void {
-
+        const controller = this.creep.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTROLLER);
+        if (controller[0]) {
+            if (this.creep.upgradeController(<StructureController>controller[0]) == ERR_NOT_IN_RANGE) {
+                this.creep.moveTo(controller[0], {visualizePathStyle: {stroke: '#ffffff'}});
+            }
+        }
     }
 
     goToConstructionSite(): void {

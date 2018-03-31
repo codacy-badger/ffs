@@ -38,16 +38,20 @@ export default class Mine extends Task {
 
     dropOffEnergy(): void {
         const dropoff = this.creep.room.find(FIND_STRUCTURES).filter(s => 
-        (   s.structureType === STRUCTURE_CONTAINER
-        ||  s.structureType === STRUCTURE_SPAWN
-        ||  s.structureType === STRUCTURE_EXTENSION)
-        // TODO: fix me. This wont work right for containers
-        && (<any>s).energy < (<any>s).energyCapacity);
+           s.structureType === STRUCTURE_CONTAINER
+        ||  (s.structureType === STRUCTURE_SPAWN && s.energy < s.energyCapacity)
+        ||  (s.structureType === STRUCTURE_EXTENSION && s.energy < s.energyCapacity));
 
-        dropoff.concat(this.creep.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTROLLER));
         if (dropoff.length > 0) {
             if(this.creep.transfer(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                 this.creep.moveTo(dropoff[0], {visualizePathStyle: {stroke: '#ffffff'}});
+            }
+        } else {
+            const controller = this.creep.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTROLLER);
+            if (controller[0]) {
+                if (this.creep.upgradeController(<StructureController>controller[0]) == ERR_NOT_IN_RANGE) {
+                    this.creep.moveTo(controller[0], {visualizePathStyle: {stroke: '#ffffff'}});
+                }
             }
         }
     }

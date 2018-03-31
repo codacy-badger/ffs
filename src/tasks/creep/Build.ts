@@ -33,10 +33,10 @@ export default class Build extends Task {
 
     collectEnergy(): void {
         const dropoff = this.creep.room.find(FIND_STRUCTURES).filter(s => 
-            s.structureType === STRUCTURE_CONTAINER
-        ||  s.structureType === STRUCTURE_SPAWN
-        ||  s.structureType === STRUCTURE_EXTENSION
-        && s.energy > (s.energyCapacity / 3));
+        (   s.structureType === STRUCTURE_SPAWN
+        ||  s.structureType === STRUCTURE_EXTENSION )
+        && s.energy > (s.energyCapacity / 3)
+        && s.energy > 215);
 
         if (dropoff.length > 0) {
             if(this.creep.withdraw(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

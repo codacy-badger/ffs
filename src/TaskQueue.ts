@@ -13,7 +13,13 @@ export default class TaskQueue {
      * @param {Task} task
      */
     public static add(task: Task) {
-        this.queue.push(task);
+        if (task) {
+            this.queue.push(task);
+        }
+    }
+
+    public static hasTasks(): boolean {
+        return this.queue.length > 0;
     }
 
     /**

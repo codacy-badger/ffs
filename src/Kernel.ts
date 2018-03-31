@@ -3,8 +3,9 @@ import Constants from './Constants';
 
 export default class Kernel {
   public static tick() {
-      while(this.CPUAvailable()) {
-          TaskQueue.process()
+      while(TaskQueue.hasTasks()
+            && this.CPUAvailable()) {
+          TaskQueue.process();
       }
   }
 

@@ -20,17 +20,11 @@ export default class Scheduler {
     }
 
     static determineWorkload(room: Room) {
-        const unworkedSourcePoints = room.find(FIND_SOURCES)
-            .map(Scheduler.getUnusedSourcePoints)
-            .reduce((acc, val) => acc + val, 0);
+        
 
         const CIR = Scheduler.getCreepsInRoom(room);
         const workersInRoom = CIR
             .filter(c => (<any>c.memory).task === 'worker').length;
-
-        if (unworkedSourcePoints > workersInRoom) {
-            this.requisitionCreep('worker', room);
-        }
 
         const constructionPoints = Scheduler.getConstructionPoints(room).length;
         const buildersInRoom = CIR
@@ -38,6 +32,14 @@ export default class Scheduler {
 
         if (constructionPoints / Constants.CONSTRUCTION_POINTS_PER_BUILDER > buildersInRoom) {
             this.requisitionCreep('builder', room);
+        }
+
+        const unworkedSourcePoints = room.find(FIND_SOURCES)
+            .map(Scheduler.getUnusedSourcePoints)
+            .reduce((acc, val) => acc + val, 0);
+
+        if (unworkedSourcePoints > workersInRoom) {
+            this.requisitionCreep('worker', room);
         }
     }
 

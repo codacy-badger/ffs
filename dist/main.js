@@ -25,7 +25,12 @@ var TaskQueue = /** @class */ (function () {
      * @param {Task} task
      */
     TaskQueue.add = function (task) {
-        this.queue.push(task);
+        if (task) {
+            this.queue.push(task);
+        }
+    };
+    TaskQueue.hasTasks = function () {
+        return this.queue.length > 0;
     };
     /**
      * Get and remove the next task from the queue.
@@ -187,10 +192,10 @@ var Build = /** @class */ (function (_super) {
     };
     Build.prototype.collectEnergy = function () {
         var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) {
-            return s.structureType === STRUCTURE_CONTAINER
-                || s.structureType === STRUCTURE_SPAWN
-                || s.structureType === STRUCTURE_EXTENSION
-                    && s.energy > (s.energyCapacity / 3);
+            return (s.structureType === STRUCTURE_SPAWN
+                || s.structureType === STRUCTURE_EXTENSION)
+                && s.energy > (s.energyCapacity / 3)
+                && s.energy > 215;
         });
         if (dropoff.length > 0) {
             if (this.creep.withdraw(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
@@ -234,20 +239,20 @@ var Scheduler = /** @class */ (function () {
         });
     };
     Scheduler.determineWorkload = function (room) {
-        var unworkedSourcePoints = room.find(FIND_SOURCES)
-            .map(Scheduler.getUnusedSourcePoints)
-            .reduce(function (acc, val) { return acc + val; }, 0);
         var CIR = Scheduler.getCreepsInRoom(room);
         var workersInRoom = CIR
             .filter(function (c) { return c.memory.task === 'worker'; }).length;
-        if (unworkedSourcePoints > workersInRoom) {
-            this.requisitionCreep('worker', room);
-        }
         var constructionPoints = Scheduler.getConstructionPoints(room).length;
         var buildersInRoom = CIR
             .filter(function (c) { return c.memory.task === 'builder'; }).length;
         if (constructionPoints / Constants.CONSTRUCTION_POINTS_PER_BUILDER > buildersInRoom) {
             this.requisitionCreep('builder', room);
+        }
+        var unworkedSourcePoints = room.find(FIND_SOURCES)
+            .map(Scheduler.getUnusedSourcePoints)
+            .reduce(function (acc, val) { return acc + val; }, 0);
+        if (unworkedSourcePoints > workersInRoom) {
+            this.requisitionCreep('worker', room);
         }
     };
     Scheduler.getConstructionPoints = function (room) {
@@ -327,7 +332,8 @@ var Kernel = /** @class */ (function () {
     function Kernel() {
     }
     Kernel.tick = function () {
-        while (this.CPUAvailable()) {
+        while (TaskQueue.hasTasks()
+            && this.CPUAvailable()) {
             TaskQueue.process();
         }
     };

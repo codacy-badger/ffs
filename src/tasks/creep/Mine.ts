@@ -26,6 +26,10 @@ export default class Mine extends Task {
 
 
     collectEnergy(): void {
+        //TODO: Determine which source to hit.
+        // Can leverage Memory.source.$sourceID to see how many it can handle
+        // will need to associate the creep with that source in memory as well
+        // then find the applicable source from memory and direct to it
         const target = this.targets[0];
         if(target && this.creep.harvest(target) == ERR_NOT_IN_RANGE) {
             this.creep.moveTo(target,  {visualizePathStyle: {stroke: '#ffff33'}});

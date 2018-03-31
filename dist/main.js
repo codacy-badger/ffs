@@ -135,20 +135,19 @@ var Mine = /** @class */ (function (_super) {
         }
     };
     Mine.prototype.collectEnergy = function () {
-        console.log("collect", this.creep.name);
         var target = this.targets[0];
         if (target && this.creep.harvest(target) == ERR_NOT_IN_RANGE) {
             this.creep.moveTo(target, { visualizePathStyle: { stroke: '#ffff33' } });
         }
     };
     Mine.prototype.dropOffEnergy = function () {
-        console.log("dropoff", this.creep.name);
         var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) {
-            return s.structureType === STRUCTURE_CONTAINER
+            return (s.structureType === STRUCTURE_CONTAINER
                 || s.structureType === STRUCTURE_SPAWN
                 || s.structureType === STRUCTURE_EXTENSION
-                    && s.energy < s.energyCapacity;
+                    && s.energy < s.energyCapacity);
         });
+        dropoff.concat(this.creep.room.find(FIND_STRUCTURES).filter(function (s) { return s.structureType === STRUCTURE_CONTROLLER; }));
         if (dropoff.length > 0) {
             if (this.creep.transfer(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                 this.creep.moveTo(dropoff[0], { visualizePathStyle: { stroke: '#ffffff' } });
@@ -168,10 +167,12 @@ var Build = /** @class */ (function (_super) {
         _this.type = 'build';
         _this.id = id;
         _this.creep = creep;
-        _this.targets = creep.room.find(FIND_CONSTRUCTION_SITES);
+        _this.targets = [];
         return _this;
     }
     Build.prototype.run = function () {
+        // TODO: This is expensive, defer or cache this please.
+        this.targets = this.creep.room.find(FIND_CONSTRUCTION_SITES);
         if (this.creep.carry.energy < 1) {
             this.collectEnergy();
         }
@@ -185,10 +186,34 @@ var Build = /** @class */ (function (_super) {
         }
     };
     Build.prototype.collectEnergy = function () {
+        var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) {
+            return s.structureType === STRUCTURE_CONTAINER
+                || s.structureType === STRUCTURE_SPAWN
+                || s.structureType === STRUCTURE_EXTENSION
+                    && s.energy > (s.energyCapacity / 3);
+        });
+        if (dropoff.length > 0) {
+            if (this.creep.withdraw(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                this.creep.moveTo(dropoff[0], { visualizePathStyle: { stroke: '#0000FF' } });
+            }
+        }
+        else {
+            // Manually Harvest it
+            var target = this.creep.room.find(FIND_SOURCES).pop();
+            if (target && this.creep.harvest(target) == ERR_NOT_IN_RANGE) {
+                this.creep.moveTo(target, { visualizePathStyle: { stroke: '#ffff33' } });
+            }
+        }
     };
     Build.prototype.upgradeController = function () {
     };
     Build.prototype.goToConstructionSite = function () {
+        var targets = this.targets.filter(function (s) { return s.progress < s.progressTotal; });
+        if (targets.length > 0) {
+            if (this.creep.build(targets[0]) == ERR_NOT_IN_RANGE) {
+                this.creep.moveTo(targets[0], { visualizePathStyle: { stroke: '#000099' } });
+            }
+        }
     };
     return Build;
 }(Task));
@@ -229,13 +254,17 @@ var Scheduler = /** @class */ (function () {
         return room.find(FIND_MY_CONSTRUCTION_SITES);
     };
     Scheduler.getUnusedSourcePoints = function (source) {
-        var x = source.pos.x;
-        var y = source.pos.y;
-        var room = source.pos.roomName;
-        var m = Game.map.getTerrainAt;
-        return [m(x - 1, y + 1, room), m(x, y + 1, room), m(x + 1, y + 1, room),
-            m(x - 1, y, room), 'wall', m(x + 1, y, room),
-            m(x - 1, y - 1, room), m(x, y - 1, room), m(x + 1, y - 1, room)].filter(function (s) { return s === 'wall'; }).length;
+        if (!Memory['source'][source.id]) {
+            var x = source.pos.x;
+            var y = source.pos.y;
+            var room = source.pos.roomName;
+            var m = Game.map.getTerrainAt;
+            Memory['source'][source.id] =
+                [m(x - 1, y + 1, room), m(x, y + 1, room), m(x + 1, y + 1, room),
+                    m(x - 1, y, room), 'wall', m(x + 1, y, room),
+                    m(x - 1, y - 1, room), m(x, y - 1, room), m(x + 1, y - 1, room)].filter(function (s) { return s === 'wall'; }).length;
+        }
+        return Memory['source'][source.id];
     };
     Scheduler.delegateCreeps = function (room) {
         var _this = this;
@@ -288,7 +317,7 @@ var Scheduler = /** @class */ (function () {
     };
     Scheduler.partMap = {
         'hauler': [MOVE, CARRY, CARRY],
-        'builder': [MOVE, MOVE, CARRY],
+        'builder': [MOVE, WORK, CARRY],
         'worker': [MOVE, WORK, CARRY]
     };
     return Scheduler;
@@ -311,6 +340,8 @@ var Kernel = /** @class */ (function () {
 }());
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
+if (!Memory['source'])
+    Memory['source'] = {};
 var loop = function () {
     console.log("Current game tick is " + Game.time);
     // Automatically delete memory of missing creeps

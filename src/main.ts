@@ -3,6 +3,8 @@
 import Scheduler from 'Scheduler';
 import Kernel from 'Kernel';
 
+if (!Memory['source']) Memory['source'] = {};
+
 export const loop = () => {
   console.log(`Current game tick is ${Game.time}`);
 

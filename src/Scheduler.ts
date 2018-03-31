@@ -46,13 +46,17 @@ export default class Scheduler {
     }
 
     static getUnusedSourcePoints(source: Source) {
-        const x = source.pos.x;
-        const y = source.pos.y;
-        const room = source.pos.roomName;
-        const m = Game.map.getTerrainAt;
-        return [m(x-1, y+1, room), m(x, y+1, room), m(x+1, y+1, room),
-                m(x-1, y, room), 'wall', m(x+1, y, room),
-                m(x-1, y-1, room), m(x, y-1, room), m(x+1, y-1, room)].filter(s => s === 'wall').length;
+        if (!Memory['source'][source.id]) {
+            const x = source.pos.x;
+            const y = source.pos.y;
+            const room = source.pos.roomName;
+            const m = Game.map.getTerrainAt;
+            Memory['source'][source.id] =
+            [m(x-1, y+1, room), m(x, y+1, room), m(x+1, y+1, room),
+             m(x-1, y, room), 'wall', m(x+1, y, room),
+             m(x-1, y-1, room), m(x, y-1, room), m(x+1, y-1, room)].filter(s => s === 'wall').length;    
+        }
+         return Memory['source'][source.id];
     }
 
     static delegateCreeps(room: Room) {
@@ -103,7 +107,7 @@ export default class Scheduler {
 
     static partMap = {
         'hauler': [MOVE, CARRY, CARRY],
-        'builder': [MOVE, MOVE, CARRY],
+        'builder': [MOVE, WORK, CARRY],
         'worker': [MOVE, WORK, CARRY]
     };
     static requisitionCreep(type: string, room: Room) {

@@ -19,7 +19,13 @@ export default class Build extends Task {
     run(): void {
         // TODO: This is expensive, defer or cache this please.
         this.targets = this.creep.room.find(FIND_CONSTRUCTION_SITES);
-        if (this.creep.carry.energy < 1) {
+        const status = (<any>this.creep.memory).status;
+        if (status !== 'gathering' && this.creep.carry.energy === 0) { 
+            (<any>this.creep.memory).status = 'gathering';
+        } else if (status !== 'building' && this.creep.carry.energy === this.creep.carryCapacity) {
+            (<any>this.creep.memory).status = 'building';
+        }
+        if ((<any>this.creep.memory).status === 'gathering') {
             this.collectEnergy();
         } else {
             if (this.targets.length > 0) {

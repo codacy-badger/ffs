@@ -183,7 +183,14 @@ var Build = /** @class */ (function (_super) {
     Build.prototype.run = function () {
         // TODO: This is expensive, defer or cache this please.
         this.targets = this.creep.room.find(FIND_CONSTRUCTION_SITES);
-        if (this.creep.carry.energy < 1) {
+        var status = this.creep.memory.status;
+        if (status !== 'gathering' && this.creep.carry.energy === 0) {
+            this.creep.memory.status = 'gathering';
+        }
+        else if (status !== 'building' && this.creep.carry.energy === this.creep.carryCapacity) {
+            this.creep.memory.status = 'building';
+        }
+        if (this.creep.memory.status === 'gathering') {
             this.collectEnergy();
         }
         else {

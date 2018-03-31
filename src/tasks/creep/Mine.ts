@@ -44,8 +44,6 @@ export default class Mine extends Task {
         // TODO: fix me. This wont work right for containers
         && (<any>s).energy < (<any>s).energyCapacity);
 
-        StructureContainer
-
         dropoff.concat(this.creep.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTROLLER));
         if (dropoff.length > 0) {
             if(this.creep.transfer(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

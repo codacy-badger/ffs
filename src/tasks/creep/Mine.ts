@@ -17,10 +17,18 @@ export default class Mine extends Task {
     }
 
     run(): void {
-        if (this.creep.carry.energy < this.creep.carryCapacity) {
+
+        const status = (<any>this.creep.memory).status;
+        if (status !== 'gathering' && this.creep.carry.energy === 0) { 
+            (<any>this.creep.memory).status = 'gathering';
+        } else if (status !== 'depositing' && this.creep.carry.energy === this.creep.carryCapacity) {
+            (<any>this.creep.memory).status = 'depositing';
+        }
+
+        if ((<any>this.creep.memory).status === 'gathering') {
             this.collectEnergy();
         } else {
-           this.dropOffEnergy();
+            this.dropOffEnergy();
         }
     }
 

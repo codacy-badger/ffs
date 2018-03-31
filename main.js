@@ -132,7 +132,14 @@ var Mine = /** @class */ (function (_super) {
         return _this;
     }
     Mine.prototype.run = function () {
-        if (this.creep.carry.energy < this.creep.carryCapacity) {
+        var status = this.creep.memory.status;
+        if (status !== 'gathering' && this.creep.carry.energy === 0) {
+            this.creep.memory.status = 'gathering';
+        }
+        else if (status !== 'depositing' && this.creep.carry.energy === this.creep.carryCapacity) {
+            this.creep.memory.status = 'depositing';
+        }
+        if (this.creep.memory.status === 'gathering') {
             this.collectEnergy();
         }
         else {
@@ -227,10 +234,10 @@ var Build = /** @class */ (function (_super) {
         }
     };
     Build.prototype.upgradeController = function () {
-        var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) { return s.structureType === STRUCTURE_CONTROLLER; });
-        if (dropoff.length > 0) {
-            if (this.creep.transfer(dropoff[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                this.creep.moveTo(dropoff[0], { visualizePathStyle: { stroke: '#ffffff' } });
+        var controller = this.creep.room.find(FIND_STRUCTURES).filter(function (s) { return s.structureType === STRUCTURE_CONTROLLER; });
+        if (controller[0]) {
+            if (this.creep.upgradeController(controller[0]) == ERR_NOT_IN_RANGE) {
+                this.creep.moveTo(controller[0], { visualizePathStyle: { stroke: '#ffffff' } });
             }
         }
     };

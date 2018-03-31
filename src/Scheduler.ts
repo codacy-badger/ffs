@@ -1,6 +1,9 @@
 // The scheduler decides what needs to happen and then creates tasks for it.
 import Constants from './Constants';
 import TaskQueue from './TaskQueue';
+import Freight from 'tasks/creep/Freight';
+import Mine from 'tasks/creep/Mine';
+import Build from 'tasks/creep/Build';
 
 export default class Scheduler {
     static getRooms(): {[p: string] : Room} {
@@ -54,10 +57,23 @@ export default class Scheduler {
 
     static delegateCreeps(room: Room) {
         let creeps = this.getCreepsInRoom(room);
+
         _.forEach(creeps, (creep: Creep) => {
             let memory = creep.memory;
             if (!memory.hasOwnProperty('task')) {
                 (<any>creep.memory).task = this.assignTaskByBodyParts(creep);
+            }
+
+            switch ((<any>creep.memory).task) {
+                case 'hauler':
+                    TaskQueue.add(new Freight('0', creep));
+                    break;
+                case 'worker':
+                    TaskQueue.add(new Mine('0', creep));
+                    break;
+                case 'builder':
+                    TaskQueue.add(new Build('0', creep))
+                    break;
             }
         });
     }
@@ -88,7 +104,7 @@ export default class Scheduler {
     static partMap = {
         'hauler': [MOVE, CARRY, CARRY],
         'builder': [MOVE, MOVE, CARRY],
-        'worker': [MOVE, WORK, WORK]
+        'worker': [MOVE, WORK, CARRY]
     };
     static requisitionCreep(type: string, room: Room) {
         const parts = (<any>this.partMap)[type];

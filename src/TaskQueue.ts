@@ -32,11 +32,11 @@ export default class TaskQueue {
      * Process the next task in the queue.
      */
     public static process() {
-        const task = this.queue.pop();
+        const task = this.pop();
         if (task) {
             task.run();
         } else {
-            console.warn("Trying to process an empty queue. Error code: QUAILHOUND");
+            //console.log("Trying to process an empty queue. Error code: QUAILHOUND");
         }
     }
 }

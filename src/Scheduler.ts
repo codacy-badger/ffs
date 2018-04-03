@@ -78,7 +78,7 @@ export default class Scheduler {
                     TaskQueue.add(new Mine('0', creep));
                     break;
                 case 'builder':
-                    TaskQueue.add(new Build('0', creep))
+                    TaskQueue.add(new Build('0', creep));
                     break;
             }
         });

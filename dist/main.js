@@ -51,7 +51,7 @@ var TaskQueue = /** @class */ (function () {
             task.run();
         }
         else {
-            //console.log("Trying to process an empty queue. Error code: QUAILHOUND");
+            console.log("Trying to process an empty queue. Error code: QUAILHOUND");
         }
     };
     TaskQueue.queue = [];

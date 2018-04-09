@@ -151,14 +151,30 @@ var Mine = /** @class */ (function (_super) {
         // Can leverage Memory.source.$sourceID to see how many it can handle
         // will need to associate the creep with that source in memory as well
         // then find the applicable source from memory and direct to it
-        var target = this.targets[0];
+        if (!this.creep.memory.target) {
+            var target_1 = this.targets.sort(function (a, b) {
+                var aa = Memory['source'][a.id]['points'] + Memory['source'][a.id]['creeps'].length;
+                var bb = Memory['source'][b.id]['points'] + Memory['source'][b.id]['creeps'].length;
+                if (aa === bb)
+                    return 0;
+                if (aa < bb)
+                    return -1;
+                else
+                    return 1;
+            })[0];
+            if (target_1) {
+                this.creep.memory.target = target_1;
+                Memory['source'][target_1.id]['creeps'].push(this.creep);
+            }
+        }
+        var target = Game.getObjectById(this.creep.memory.target.id);
         if (target && this.creep.harvest(target) == ERR_NOT_IN_RANGE) {
             this.creep.moveTo(target, { visualizePathStyle: { stroke: '#ffff33' } });
         }
     };
     Mine.prototype.dropOffEnergy = function () {
         var dropoff = this.creep.room.find(FIND_STRUCTURES).filter(function (s) {
-            return s.structureType === STRUCTURE_CONTAINER
+            return (s.structureType === STRUCTURE_CONTAINER && s.store.energy < s.storeCapacity)
                 || (s.structureType === STRUCTURE_SPAWN && s.energy < s.energyCapacity)
                 || (s.structureType === STRUCTURE_EXTENSION && s.energy < s.energyCapacity);
         });
@@ -168,6 +184,7 @@ var Mine = /** @class */ (function (_super) {
             }
         }
         else {
+            // Controllers are unique
             var controller = this.creep.room.find(FIND_STRUCTURES).filter(function (s) { return s.structureType === STRUCTURE_CONTROLLER; });
             if (controller[0]) {
                 if (this.creep.upgradeController(controller[0]) == ERR_NOT_IN_RANGE) {
@@ -277,10 +294,12 @@ var Scheduler = /** @class */ (function () {
         if (constructionPoints / Constants.CONSTRUCTION_POINTS_PER_BUILDER > buildersInRoom) {
             this.requisitionCreep('builder', room);
         }
-        var unworkedSourcePoints = room.find(FIND_SOURCES)
+        var sources = room.find(FIND_SOURCES);
+        var unworkedSourcePoints = sources
             .map(Scheduler.getUnusedSourcePoints)
+            .map(function (e) { return e.points; })
             .reduce(function (acc, val) { return acc + val; }, 0);
-        if (unworkedSourcePoints > workersInRoom) {
+        if (unworkedSourcePoints > workersInRoom - sources.length) {
             this.requisitionCreep('worker', room);
         }
     };
@@ -293,10 +312,12 @@ var Scheduler = /** @class */ (function () {
             var y = source.pos.y;
             var room = source.pos.roomName;
             var m = Game.map.getTerrainAt;
-            Memory['source'][source.id] =
-                [m(x - 1, y + 1, room), m(x, y + 1, room), m(x + 1, y + 1, room),
+            Memory['source'][source.id] = {
+                points: [m(x - 1, y + 1, room), m(x, y + 1, room), m(x + 1, y + 1, room),
                     m(x - 1, y, room), 'wall', m(x + 1, y, room),
-                    m(x - 1, y - 1, room), m(x, y - 1, room), m(x + 1, y - 1, room)].filter(function (s) { return s === 'wall'; }).length;
+                    m(x - 1, y - 1, room), m(x, y - 1, room), m(x + 1, y - 1, room)].filter(function (s) { return s === 'wall'; }).length,
+                creeps: []
+            };
         }
         return Memory['source'][source.id];
     };
@@ -338,7 +359,7 @@ var Scheduler = /** @class */ (function () {
         var spawner = room.find(FIND_MY_SPAWNS)
             .filter(function (s) { return s.spawnCreep(parts, '', { dryRun: true }) && !s.spawning; })[0];
         if (spawner) {
-            spawner.spawnCreep(parts, type + new Date().toISOString(), { memory: { task: type } });
+            spawner.spawnCreep(parts, type + new Date().getMilliseconds(), { memory: { task: type } });
         }
     };
     Scheduler.taskMap = {
@@ -379,6 +400,10 @@ if (!Memory['source'])
     Memory['source'] = {};
 var loop = function () {
     console.log("Current game tick is " + Game.time);
+    // should be moved into the source identification process
+    if (Game.time % 25 === 0) {
+        Memory['source'] = {};
+    }
     // Automatically delete memory of missing creeps
     for (var name_1 in Memory.creeps) {
         if (!(name_1 in Game.creeps)) {

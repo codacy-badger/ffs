@@ -7,7 +7,7 @@ export default class Mine extends Task {
     type: string = 'mine';
     id: string;
     creep: Creep;
-    targets: any[];
+    targets: Source[];
 
     constructor(id: string, creep: Creep) {
         super();
@@ -38,7 +38,22 @@ export default class Mine extends Task {
         // Can leverage Memory.source.$sourceID to see how many it can handle
         // will need to associate the creep with that source in memory as well
         // then find the applicable source from memory and direct to it
-        const target = this.targets[0];
+        if (!(<any>this.creep.memory).target) {
+            const target = this.targets.sort((a, b) => {
+                const aa = Memory['source'][a.id]['points'] + Memory['source'][a.id]['creeps'].length;
+                const bb = Memory['source'][b.id]['points'] + Memory['source'][b.id]['creeps'].length;
+                if (aa === bb) return 0;
+                if (aa < bb) return -1;
+                else return 1;
+            })[0];
+
+            if (target) {
+                (<any>this.creep.memory).target = target;
+                Memory['source'][target.id]['creeps'].push(this.creep);
+            }
+        }
+        
+        const target = <Source>Game.getObjectById((<any>this.creep.memory).target.id);
         if(target && this.creep.harvest(target) == ERR_NOT_IN_RANGE) {
             this.creep.moveTo(target,  {visualizePathStyle: {stroke: '#ffff33'}});
         }
@@ -46,7 +61,7 @@ export default class Mine extends Task {
 
     dropOffEnergy(): void {
         const dropoff = this.creep.room.find(FIND_STRUCTURES).filter(s => 
-           s.structureType === STRUCTURE_CONTAINER
+        (s.structureType === STRUCTURE_CONTAINER && s.store.energy < s.storeCapacity)
         ||  (s.structureType === STRUCTURE_SPAWN && s.energy < s.energyCapacity)
         ||  (s.structureType === STRUCTURE_EXTENSION && s.energy < s.energyCapacity));
 
@@ -55,6 +70,7 @@ export default class Mine extends Task {
                 this.creep.moveTo(dropoff[0], {visualizePathStyle: {stroke: '#ffffff'}});
             }
         } else {
+            // Controllers are unique
             const controller = this.creep.room.find(FIND_STRUCTURES).filter(s => s.structureType === STRUCTURE_CONTROLLER);
             if (controller[0]) {
                 if (this.creep.upgradeController(<StructureController>controller[0]) == ERR_NOT_IN_RANGE) {

@@ -8,6 +8,11 @@ if (!Memory['source']) Memory['source'] = {};
 export const loop = () => {
   console.log(`Current game tick is ${Game.time}`);
 
+  // should be moved into the source identification process
+  if (Game.time % 25 === 0) {
+    Memory['source'] = {};
+  }
+
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {
     if (!(name in Game.creeps)) {

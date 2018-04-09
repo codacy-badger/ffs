@@ -34,11 +34,13 @@ export default class Scheduler {
             this.requisitionCreep('builder', room);
         }
 
-        const unworkedSourcePoints = room.find(FIND_SOURCES)
+        const sources = room.find(FIND_SOURCES);
+        const unworkedSourcePoints = sources
             .map(Scheduler.getUnusedSourcePoints)
+            .map(e => e.points)
             .reduce((acc, val) => acc + val, 0);
 
-        if (unworkedSourcePoints > workersInRoom) {
+        if (unworkedSourcePoints > workersInRoom - sources.length) {
             this.requisitionCreep('worker', room);
         }
     }
@@ -53,10 +55,12 @@ export default class Scheduler {
             const y = source.pos.y;
             const room = source.pos.roomName;
             const m = Game.map.getTerrainAt;
-            Memory['source'][source.id] =
-            [m(x-1, y+1, room), m(x, y+1, room), m(x+1, y+1, room),
-             m(x-1, y, room), 'wall', m(x+1, y, room),
-             m(x-1, y-1, room), m(x, y-1, room), m(x+1, y-1, room)].filter(s => s === 'wall').length;    
+            Memory['source'][source.id] = {
+                points: [m(x-1, y+1, room), m(x, y+1, room), m(x+1, y+1, room),
+                        m(x-1, y, room), 'wall', m(x+1, y, room),
+                        m(x-1, y-1, room), m(x, y-1, room), m(x+1, y-1, room)].filter(s => s === 'wall').length,
+                creeps: []
+            }
         }
          return Memory['source'][source.id];
     }
@@ -117,7 +121,7 @@ export default class Scheduler {
         const spawner = room.find(FIND_MY_SPAWNS)
             .filter((s) => s.spawnCreep(parts, '', {dryRun: true}) && !s.spawning)[0];
         if (spawner) {
-            spawner.spawnCreep(parts, type+new Date().toISOString(), {memory: {task: type}});
+            spawner.spawnCreep(parts, type+new Date().getMilliseconds(), {memory: {task: type}});
         }
     }
 }

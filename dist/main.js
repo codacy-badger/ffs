@@ -359,7 +359,7 @@ var Scheduler = /** @class */ (function () {
         var spawner = room.find(FIND_MY_SPAWNS)
             .filter(function (s) { return s.spawnCreep(parts, '', { dryRun: true }) && !s.spawning; })[0];
         if (spawner) {
-            spawner.spawnCreep(parts, type + new Date().getMilliseconds(), { memory: { task: type } });
+            spawner.spawnCreep(parts, type + new Date().getUTCMilliseconds(), { memory: { task: type } });
         }
     };
     Scheduler.taskMap = {

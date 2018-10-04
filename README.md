@@ -1,5 +1,7 @@
 # FFS (Subject to Change)
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f7171adbfd894cf4a970af8e816cb508)](https://app.codacy.com/app/brad.cypert/ffs?utm_source=github.com&utm_medium=referral&utm_content=bradcypert/ffs&utm_campaign=Badge_Grade_Dashboard)
+
 FFS is a simple screeps operating system that takes an opinionated approach on fundamental tasks and processes that should be ran per cycle. It's currently self-sufficient up to RC3, but does need some love regarding future RC Levels and Rooms.
 
 ## Basic Usage
